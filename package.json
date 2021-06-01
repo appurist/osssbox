@@ -1,0 +1,26 @@
+{
+  "name": "osssbox",
+  "version": "0.1.0",
+  "description": "Online Storage Server for S3",
+  "main": "index.js",
+  "scripts": {
+    "test": "yarn test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/appurist/osssbox.git"
+  },
+  "keywords": [
+    "storage",
+    "server",
+    "serverless",
+    "s3",
+    "aws"
+  ],
+  "author": "Paul Whittemore <dev@appurist.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/appurist/osssbox/issues"
+  },
+  "homepage": "https://github.com/appurist/osssbox#readme"
+}
