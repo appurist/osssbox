@@ -1,13 +1,27 @@
+const uuid = require('uuid-random');
 const jwt = require('jsonwebtoken');
+const md5 = require('md5');
 
 console.log('Initializing auth.');
+let ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT || process.env.ADMIN;
 console.log('OSSSBOX_SECRET is', process.env.OSSSBOX_SECRET);
 
 function NoSuchUser() {
   return Object.assign({}, { authenticated: false });
 }
 
-function verifyToken(token, secret) {
+function makeToken(user) {
+  return user;
+}
+
+function makeUserResponse(user) {
+  let response = Object.assign({ }, user)    
+  response.administrator = (response.login === ADMIN_ACCOUNT) || (response.uid === ADMIN_ACCOUNT);
+  response.token = makeToken(user);
+  return response;
+}
+
+function verifyToken(token) {
   let user = NoSuchUser();
   if (!token)
     return user;
@@ -50,4 +64,4 @@ function isAdmin(request) {
   return user && user.administrator;
 }
 
-module.exports = { verifyToken, getAuth, isAdmin };
+module.exports = { makeToken, verifyToken, getAuth, isAdmin };
