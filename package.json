@@ -4,6 +4,7 @@
   "description": "Online Storage Server for S3",
   "scripts": {
     "dev": "netlify dev",
+    "debug": "netlify dev --inspect",
     "test": "yarn test"
   },
   "repository": {
