@@ -27,5 +27,7 @@
   "devDependencies": {
     "netlify-cli": "^3.32.6"
   },
-  "dependencies": {}
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1"
+  }
 }

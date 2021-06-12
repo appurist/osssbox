@@ -1,6 +1,11 @@
 [[redirects]]
-  from = "/api/hello/*"
-  to = "/.netlify/functions/hello"
+  from = "/ping/*"
+  to = "/.netlify/functions/ping"
+  status = 200
+
+[[redirects]]
+  from = "/api/profile/*"
+  to = "/.netlify/functions/profile"
   status = 200
 
 [functions]
