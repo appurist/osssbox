@@ -25,13 +25,13 @@
   },
   "homepage": "https://github.com/appurist/osssbox#readme",
   "devDependencies": {
-    "netlify-cli": "^3.32.6"
+    "netlify-cli": "latest"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.18.0",
-    "@aws-sdk/credential-provider-ini": "^3.18.0",
-    "jsonwebtoken": "^8.5.1",
-    "md5": "^2.3.0",
-    "uuid-random": "^1.3.2"
+    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/credential-provider-ini": "latest",
+    "jsonwebtoken": "latest",
+    "md5": "latest",
+    "uuid-random": "latest"
   }
 }
