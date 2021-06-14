@@ -1,5 +1,6 @@
 node_modules/
-yarn-error.log
-.vscode/
-
+apidoc/
 .netlify/
+.vscode/settings.json
+functions-event.json
+yarn-error.log

@@ -4,6 +4,7 @@
   "description": "Online Storage Server for S3",
   "scripts": {
     "dev": "netlify dev",
+    "debug": "netlify dev --inspect",
     "test": "yarn test"
   },
   "repository": {
@@ -24,7 +25,13 @@
   },
   "homepage": "https://github.com/appurist/osssbox#readme",
   "devDependencies": {
-    "netlify-cli": "^3.32.6"
+    "netlify-cli": "latest"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/credential-provider-ini": "latest",
+    "bcrypt": "^5.0.1",
+    "jsonwebtoken": "latest",
+    "uuid-random": "latest"
+  }
 }

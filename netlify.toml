@@ -1,6 +1,24 @@
+[dev]
+  port = 8123
+
 [[redirects]]
-  from = "/api/hello/*"
-  to = "/.netlify/functions/hello"
+  from = "/ping/*"
+  to = "/.netlify/functions/ping"
+  status = 200
+
+[[redirects]]
+  from = "/api/login/*"
+  to = "/.netlify/functions/login"
+  status = 200
+
+[[redirects]]
+  from = "/api/profile/*"
+  to = "/.netlify/functions/profile"
+  status = 200
+
+[[redirects]]
+  from = "/api/users/*"
+  to = "/.netlify/functions/users"
   status = 200
 
 [functions]
