@@ -1,3 +1,5 @@
+const config = require('../lib/config');
+
 exports.handler = async (event, /* context */ ) => {
   console.log(`${event.path} [${event.httpMethod}] from ${event.headers["client-ip"]}`);
   if (event.httpMethod !== 'GET') return { statusCode: 405 };
@@ -5,6 +7,6 @@ exports.handler = async (event, /* context */ ) => {
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'osssbox', apiVersion: 1 }, null, 2)
+    body: JSON.stringify({ name: 'osssbox', apiVersion: 1, apiPrefix: config.API_PREFIX }, null, 2)
   };
 };
