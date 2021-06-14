@@ -1,35 +1,30 @@
-const s3api = require('../lib/s3api');
+let SITE = process.env.OSSSBOX_SITE;      // short name (e.g. 'osssbox')
+let NAME = process.env.OSSSBOX_NAME;      // long name (e.g. 'OSSSBox Server')
+let ISSUER = process.env.OSSSBOX_ISSUER;  // for the token produced
+let SECRET = process.env.OSSSBOX_SECRET;  // for JWT signing
+let ADMIN = process.env.OSSSBOX_ADMIN;    // e.g. 'admin' or the administrator's UUID
+let REGISTRATION = process.env.OSSSBOX_REGISTRATION;  // true or yes, otherwise interpreted as false.
 
-// config.json format is:
-const DEFAULT_CONFIG = {
-  "site": "osssbox",
-  "name": "OSSSBox Server",
-  "admin": "admin",
-  "registration": false
+if (!SITE) {
+  console.error("You must specify an OSSSBOX_SITE environment variables.")
+}
+if (!NAME) {
+  console.error("You must specify an OSSSBOX_NAME environment variables.")
+}
+if (!ISSUER) {
+  console.error("You must specify an OSSSBOX_ISSUER environment variables.")
+}
+if (!SECRET) {
+  console.error("You must specify an OSSSBOX_SECRET environment variables.")
+}
+if (!ADMIN) {
+  console.error("You must specify an OSSSBOX_ADMIN environment variables.")
+}
+if (REGISTRATION) {
+  let value = REGISTRATION.toLowerCase();
+  REGISTRATION = (value === 'true') || (value === 'yes') ? true : false;
+} else {
+  console.error("You must specify an OSSSBOX_REGISTRATION environment variables (e.g. TRUE).")
 }
 
-let config = null;
-
-async function getConfig(force) {
-  if (force || !config) {
-    let doc = await s3api.docGet('config.json').catch(err => console.error('Reading config.json:',err.message));
-    if (!doc) {
-      console.warn("No config.json found for site, assuming defaults.");
-      doc = Object.assign({}, DEFAULT_CONFIG);
-      await s3api.docPut('config.json', doc).catch(err => console.error('Writing default config.json:',err.message));
-    } else {
-      // console.log("config:", JSON.stringify(config, null, 2));
-      config = JSON.parse(doc);
-      console.log("config.json loaded from bucket.");
-    }
-  }
-  return config;
-}
-
-async function putConfig(newConfig) {
-  config = Object.assign({}, newConfig);
-  await s3api.docPut('config.json', config).catch(err => console.error('Writing default config.json:',err.message));
-  return config;
-}
-
-module.exports = { getConfig, putConfig };
+module.exports = { SITE, NAME, ISSUER, SECRET, ADMIN, REGISTRATION };

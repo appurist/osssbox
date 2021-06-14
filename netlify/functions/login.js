@@ -1,5 +1,5 @@
+const config = require('../lib/config');
 const auth = require('../lib/auth');
-const { getConfig } = require('../lib/config');
 const s3api = require('../lib/s3api');
 
 // A user is format:
@@ -17,16 +17,19 @@ exports.handler = async (event, /* context */ ) => {
     console.log(`${event.path} [${event.httpMethod}] from ${event.headers["client-ip"]}`);
     if (event.httpMethod !== 'POST') return { statusCode: 405 };
 
+    // First let's check the config prerequisites.
+    if (!config.ISSUER) {
+      console.error(`User '${login}' login failed: OSSSBOX_ISSUER is not defined in the environment.`);
+      return { statusCode: 503 };
+    }
+
     let body = JSON.parse(event.body);
     if (!body.login) return { statusCode: 401 };
     let login = body.login.trim();
 
     s3api.connect();
 
-    // First let's request the config for later
-    let config = await getConfig();
-
-    // Now let's look up the login name to find the UID and auth info for that user.
+    // First let's look up the login name to find the UID and auth info for that user.
     let doc = await s3api.docGet(`auth/${login}.json`);
     if (!doc) {
       console.error(`No document to parse for user '${login}'.`);
@@ -44,7 +47,7 @@ exports.handler = async (event, /* context */ ) => {
     }
 
     console.log(`Login by ${user.display} (${user.login}) [${user.uid}]: OK`);
-    let issuer = config.site;
+    let issuer = config.ISSUER;
     let token = auth.makeToken(user, issuer);
     let response = Object.assign({ }, user, {token });
 

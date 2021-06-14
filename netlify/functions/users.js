@@ -1,19 +1,22 @@
 const uuid = require('uuid-random');
 const auth = require('../lib/auth');
 const s3api = require('../lib/s3api');
-const { getConfig } = require('../lib/config');
+const config = require('../lib/config');
 
-// A new user is format:
-// {
-//   "uid": "83d85a9a-27b6-475a-995d-86d26d227a72",
-//   "login": "admin",
-//   "display": "Administrator",
-//   "email": "dev@authordesktop.com"
-// }
 exports.handler = async (event, /* context */ ) => {
   try {
     console.log(`${event.path} [${event.httpMethod}] from ${event.headers["client-ip"]}`);
     if (event.httpMethod !== 'POST') return { statusCode: 405 };
+
+    // First let's check the config prerequisites (e.g. to see if registration is even allowed).
+    if (!config.ISSUER) {
+      console.error(`User '${login}' login failed: OSSSBOX_ISSUER is not defined in the environment.`);
+      return { statusCode: 503 };
+    }
+    if (!config.REGISTRATION) {
+      console.error(`User '${login}' registration failed: registration is not enabled in the OSSSBOX_REGISTRATION environment.`);
+      return { statusCode: 403 };
+    }
 
     let body = JSON.parse(event.body);
     let {login, password, display, email} = body;
@@ -26,13 +29,6 @@ exports.handler = async (event, /* context */ ) => {
     if (!(login && password && display && email)) return { statusCode: 400 };
 
     s3api.connect();
-
-    // First let's request the config for later
-    let config = await getConfig();
-    if (!config?.registration) {
-      console.error(`User '${login}' registration failed: registration is not enabled in config.json.`);
-      return { statusCode: 403 };
-    }
 
     // Now let's look up the login name to find the UID and auth info for that user.
     let doc = await s3api.docGet(`users/auth/${body.login}.json`);
@@ -49,7 +45,7 @@ exports.handler = async (event, /* context */ ) => {
     result = await s3api.docPut(`auth/${login}.json`, { user, credentials });
 
     console.log(`Registration for ${user.display} (${user.login}) [${user.uid}]: OK`);
-    let issuer = config.site;
+    let issuer = config.ISSUER;
     user = auth.makeUserResponse(user);
     user.token = auth.makeToken(user, issuer);
 
