@@ -1,23 +1,36 @@
-const uuid = require('uuid-random');
 const jwt = require('jsonwebtoken');
-const md5 = require('md5');
+const bcrypt = require ('bcrypt');
 
-console.log('Initializing auth.');
+const saltRounds = 12;
+
 let ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT || process.env.ADMIN;
-console.log('OSSSBOX_SECRET is', process.env.OSSSBOX_SECRET);
+let SECRET = process.env.OSSSBOX_SECRET || process.env.AUTH_SECRET;
+if (!SECRET) {
+  console.error("You must specify either OSSSBOX_SECRET or AUTH_SECRET environment variables.")
+}
 
 function NoSuchUser() {
   return Object.assign({}, { authenticated: false });
 }
 
-function makeToken(user) {
-  return user;
+function makeCredentials(password) {
+  const salt = bcrypt.genSaltSync(saltRounds);
+  const hash = bcrypt.hashSync(password, salt);
+  return Object.assign ({}, { salt, hash });
+}
+
+function checkPassword(password, hash, salt) {
+  // bcrypt stores the original salt right in the hash so it is not needed
+  return bcrypt.compareSync(password, hash);
+}
+
+function makeToken(user, issuer) {
+  return jwt.sign(user, SECRET, { issuer })
 }
 
 function makeUserResponse(user) {
   let response = Object.assign({ }, user)    
   response.administrator = (response.login === ADMIN_ACCOUNT) || (response.uid === ADMIN_ACCOUNT);
-  response.token = makeToken(user);
   return response;
 }
 
@@ -26,21 +39,12 @@ function verifyToken(token) {
   if (!token)
     return user;
 
-  if (!secret) {
-    secret = process.env.OSSSBOX_SECRET || process.env.AUTH_SECRET;
-  }
-
-  if (!secret) {
-    console.error("You must specify either OSSSBOX_SECRET or AUTH_SECRET environment variables.")
-    return user;
-  }
-
-  let result = jwt.verify(token, secret, function(err, decoded) {
+  let result = jwt.verify(token, SECRET, function(err, decoded) {
     if (err)
       return user;
 
     // log.info("Storing user for token:", decoded);
-    user = decoded;
+    user = makeUserResponse(decoded);
     user.token = token;
     user.authenticated = true;
     return user;
@@ -48,7 +52,7 @@ function verifyToken(token) {
   return result;
 }
 
-function getAuth(authorization, secret) {
+function getAuth(authorization) {
   if (!authorization)
     return NoSuchUser();
 
@@ -56,7 +60,7 @@ function getAuth(authorization, secret) {
   if (words[0] !== 'Bearer')
     return NoSuchUser();
 
-  return verifyToken(words[1], secret);
+  return verifyToken(words[1]);
 }
   
 function isAdmin(request) {
@@ -64,4 +68,4 @@ function isAdmin(request) {
   return user && user.administrator;
 }
 
-module.exports = { makeToken, verifyToken, getAuth, isAdmin };
+module.exports = { checkPassword, makeCredentials, makeUserResponse, makeToken, verifyToken, getAuth, isAdmin };

@@ -15,8 +15,8 @@ exports.handler = async (event, /* context */ ) => {
       body: response
     };
   } catch (err) {
-    console.error("Exception:", err.errorMessage);
-    if (err.stackTrace) {
+    console.error("Exception:", err.message);
+    if (err.stack) {
       console.log(err.stackTrace);
     }
     return { statusCode: 500 };

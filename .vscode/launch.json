@@ -5,8 +5,8 @@
       "name": "Netlify Debug",
       "type": "pwa-node",
       "request": "launch",
-      "runtimeArgs": ["run-script", "debug"],
-      "runtimeExecutable": "npm",
+      "runtimeArgs": ["debug"],
+      "runtimeExecutable": "yarn",
       "skipFiles": ["<node_internals>/**"]
     }
   ]

@@ -5,6 +5,6 @@ exports.handler = async (event, /* context */ ) => {
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'osssbox', apiVersion: 1 })
+    body: JSON.stringify({ name: 'osssbox', apiVersion: 1 }, null, 2)
   };
 };

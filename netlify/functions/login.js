@@ -1,4 +1,5 @@
 const auth = require('../lib/auth');
+const { getConfig } = require('../lib/config');
 const s3api = require('../lib/s3api');
 
 // A user is format:
@@ -18,26 +19,34 @@ exports.handler = async (event, /* context */ ) => {
 
     let body = JSON.parse(event.body);
     if (!body.login) return { statusCode: 401 };
+    let login = body.login.trim();
 
     s3api.connect();
 
-    // First let's look up the login name to find the UID for that user.
-    let user = null;
-    let doc = await s3api.docGet(`users/login/${body.login}.json`);
-    if (doc) {
-      user = JSON.parse(doc);
-    } else {
-      console.error(`No document to parse for user '${body.login}.`);
-      return { statusCode: 401 };
-    }
-    if (!user?.uid) {
-      console.error(`Document for user '${body.login}' does not include a UID.`)
-      return { statusCode: 401 };
-    }
-    user.authenticated = true;
+    // First let's request the config for later
+    let config = await getConfig();
 
-    console.log(`Login by ${user.display} (${user.login}) [${user.uid}]...`);
-    let response = auth.makeToken(user);
+    // Now let's look up the login name to find the UID and auth info for that user.
+    let doc = await s3api.docGet(`auth/${login}.json`);
+    if (!doc) {
+      console.error(`No document to parse for user '${login}'.`);
+      return { statusCode: 401 };
+    }
+    let data = JSON.parse(doc);
+    if (!data?.user) {
+      console.error(`Document for user '${login}' does not include a user.`)
+      return { statusCode: 401 };
+    }
+    let user = data.user;
+    if (!user?.uid) {
+      console.error(`Document for user '${login}' does not include a UID.`)
+      return { statusCode: 401 };
+    }
+
+    console.log(`Login by ${user.display} (${user.login}) [${user.uid}]: OK`);
+    let issuer = config.site;
+    let token = auth.makeToken(user, issuer);
+    let response = Object.assign({ }, user, {token });
 
     return {
       statusCode: user.authenticated ? 200 : 401,

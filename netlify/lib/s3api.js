@@ -1,4 +1,4 @@
-const { S3Client, ListObjectsCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, ListObjectsCommand, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 const {fromIni} = require("@aws-sdk/credential-provider-ini");
 const chalk = require("chalk");
 
@@ -27,7 +27,7 @@ function connect() {
   if (!(region || endpoint)) throw new Error('Neither AWS region nor endpoint was specified, e.g. "us-east-1" or "ewr1.vultrobjects.com"');
 
   s3Client = new S3Client({ region, credentials, endpoint });
-  
+
 }
 
 function setAccessKey(_key) {
@@ -102,7 +102,8 @@ async function docList(_prefix, _bucket) {
   return list; // For unit tests.
 }
 
-// Retrieve the file 'Key' in '_bucket'.
+// Retrieve the document 'Key' from '_bucket'.
+// Unlike docPut, if it is JSON, it is NOT automatically converted to an object.
 async function docGet(Key, _bucket) {
   let Bucket = _bucket || bucket;
   try {
@@ -123,15 +124,35 @@ async function docGet(Key, _bucket) {
     // console.log(bodyContents);
     return bodyContents;
   } catch (err) {
+    if (err.message !== 'NoSuchKey') {
+      console.error(`Read error '${chalk.red(err.message)}' on:`, Key);
+    }
+    return undefined;
+  }
+}
+
+// Store the document 'Key' in '_bucket'.
+async function docPut(Key, _doc, _bucket) {
+  let Bucket = _bucket || bucket;
+  let doc = _doc || { };
+  // S3 API can't directly serialize with a simple PutObjectCommand.
+  let Body = (typeof doc === 'object') ? JSON.stringify(doc, null, 2) : doc;
+  let result;
+
+  try {
+    // Get the object} from the Amazon S3 bucket. It is returned as a ReadableStream.
+    result = await s3Client.send(new PutObjectCommand({ Bucket, Key, Body }));
+  } catch (err) {
     // console.error("Read error:", err.message);
     console.error("Read error:", chalk.red(err.message));
     return undefined;
   }
+  return result;
 }
 
 module.exports = { 
   setAccessKey, setSecretAccessKey, setProfile,
   setRegion, setEndpoint, setBucket,
   connect, normalizePrefix,
-  docList, docGet
+  docList, docGet, docPut
 }

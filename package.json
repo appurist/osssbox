@@ -30,8 +30,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "latest",
     "@aws-sdk/credential-provider-ini": "latest",
+    "bcrypt": "^5.0.1",
     "jsonwebtoken": "latest",
-    "md5": "latest",
     "uuid-random": "latest"
   }
 }
