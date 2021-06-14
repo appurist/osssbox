@@ -31,7 +31,7 @@ exports.handler = async (event, /* context */ ) => {
     s3api.connect();
 
     // Now let's look up the login name to find the UID and auth info for that user.
-    let doc = await s3api.docGet(`users/auth/${body.login}.json`);
+    let doc = await s3api.docGet(`auth/${body.login}.json`);
     if (doc) {
       console.error(`User '${login} already exists.`);
       return { statusCode: 409 };
