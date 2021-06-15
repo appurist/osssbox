@@ -4,7 +4,11 @@
 
 OSSSBox storage can be divided into two major categories, **auth storage** and **user storage**. *Auth storage* is those files necessary for logins and authentication tokens. *User storage* is further divided into *account-related* info (such as public and private profile info), as well as user *projects*, and *assets*.
 
-Note: Where a key (S3 path) component is enclosed in `(parentheses)`, it represents a variable placeholder for actual information, such as a users login ID or account UUID.
+#### Projects and Assets
+
+It is important to understand that *projects* and *assets* are **not** defined by OSSSBox, and thus not defined to be any specific format. Project format depends on the project, but represents a JSON object with an OSSSBox-managed `uid` field used to identify it.  Assets are a similar JSON object with metadata for the asset, along with a binary file (blob) representing the asset itself, which can be in any format.
+
+Note: Where a key (S3 path) component is enclosed in `(parentheses)` below, it represents a variable placeholder for actual information, such as a users login ID or account UUID.
 
 ## Summary of  Storage
 
@@ -90,6 +94,18 @@ Example: `users/1fd8cd99-8a56-40d6-9016-54379fee58ae/account.json`
 Example: `users/1fd8cd99-8a56-40d6-9016-54379fee58ae/projects/4abfb278-eb37-44ad-9688-33f23a04cf78.json`
 (a project owned by 'admin')
 
-### `users/(user)/assets/(asset).json`
-Example: `users/1fd8cd99-8a56-40d6-9016-54379fee58ae/assets/ac452d0d-cb55-4ea6-9290-8309e3ff7ad8.json`
+Project objects are defined by the project and not by OSSSBox. They can be anything. OSSSBox allows projects to be created, retrieved, updated, deleted or listed but understands nothing of the project other than the OSSSBox-managed `uid` field storing `(project)` within the JSON object.
 
+### `users/(user)/assets/(asset).json`
+
+### `users/(user)/assets/(asset).blob`
+
+And example asset might be:
+
+`users/1fd8cd99-8a56-40d6-9016-54379fee58ae/assets/ac452d0d-cb55-4ea6-9290-8309e3ff7ad8.json` for asset metadata, with
+
+`users/1fd8cd99-8a56-40d6-9016-54379fee58ae/assets/ac452d0d-cb55-4ea6-9290-8309e3ff7ad8.blob`storing the actual blob data.
+
+Assets are objects defined by a project and not by OSSSBox. They can be anything. OSSSBox allows projects to be created, retrieved, updated, deleted or listed but understands nothing of the project other than the OSSSBox-managed `uid` field storing `(asset)` within the JSON object.
+
+### 
