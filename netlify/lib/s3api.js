@@ -1,6 +1,11 @@
 const { S3Client, ListObjectsCommand, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
-const {fromIni} = require("@aws-sdk/credential-provider-ini");
+const { fromIni } = require("@aws-sdk/credential-provider-ini");
+const { createPresignedPost } = require("@aws-sdk/s3-presigned-post");
+
 const chalk = require("chalk");
+
+// Part size for blob uploads
+const PARTSIZE = (5*1024*1024)
 
 // Set the AWS context
 let accessKeyId = process.env.S3_ACCESS_KEY_ID;
@@ -149,9 +154,25 @@ async function docPut(Key, _doc, _bucket) {
   return result;
 }
 
+// keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
+async function getUploadURL(keyPrefix, _bucket) {
+  let Bucket = _bucket || bucket;
+  let Key = keyPrefix;
+  const Conditions = [{ acl: "private" }, { bucket: Bucket }, ["starts-with", "$key", keyPrefix]];
+  const Fields = { acl: "private" };
+  const { url, fields } = await createPresignedPost(s3Client, {
+    Bucket,
+    Key,
+    Conditions,
+    Fields,
+    Expires: 3600, //Seconds before the presigned post expires. 3600 by default.
+  });
+  return { url, fields };
+}
+
 module.exports = { 
   setAccessKey, setSecretAccessKey, setProfile,
   setRegion, setEndpoint, setBucket,
-  connect, normalizePrefix,
+  connect, normalizePrefix, getUploadURL,
   docList, docGet, docPut
 }
