@@ -140,7 +140,6 @@ async function docPut(Key, _doc, _bucket) {
   let result;
 
   try {
-    // Get the object} from the Amazon S3 bucket. It is returned as a ReadableStream.
     result = await s3Client.send(new PutObjectCommand({ Bucket, Key, Body }));
   } catch (err) {
     // console.error("Read error:", err.message);
