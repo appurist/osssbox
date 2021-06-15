@@ -48,8 +48,9 @@ exports.handler = async (event, /* context */ ) => {
 
     console.log(`Login by ${user.display} (${user.login}) [${user.uid}]: OK`);
     let issuer = config.ISSUER;
-    let token = auth.makeToken(user, issuer);
-    let response = Object.assign({ }, user, {token });
+    user = auth.makeUserResponse(user); // make a new copy and set administrator flag if a match
+    user.token = auth.makeToken(user, issuer);
+    let response = user;
 
     return {
       statusCode: user.authenticated ? 200 : 401,
