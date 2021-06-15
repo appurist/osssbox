@@ -15,21 +15,21 @@ async function GetList(userId) {
   };
 }
 
-async function ReadOne(userId, projId) {
+async function ReadOne(userId, assetId) {
   s3api.connect();
 
-  let doc = await s3api.docGet(`users/${userId}/assets/${projId}.json`);
+  let doc = await s3api.docGet(`users/${userId}/assets/${assetId}.json`);
   return {
     statusCode: doc ? 200 : 404,
     headers: { 'Content-Type': doc ? 'application/json' : 'text/html'},
-    body: doc || `User '${userId}' has no such project '${projId}'.`
+    body: doc || `User '${userId}' has no such asset '${assetId}'.`
   };
 }
 
 async function CreateOne(userId, json) {
   s3api.connect();
 
-  let projId = uuid();
+  let assetId = uuid();
   let doc;
   try {
     doc = JSON.parse(json);
@@ -39,8 +39,8 @@ async function CreateOne(userId, json) {
       body: 'Bad JSON body: '+err.message
     };
   }
-  let newDoc = Object.assign({ }, doc, {uid: projId});
-  let result = await s3api.docPut(`users/${userId}/assets/${projId}.json`, newDoc);
+  let newDoc = Object.assign({ }, doc, {uid: assetId});
+  let result = await s3api.docPut(`users/${userId}/assets/${assetId}.json`, newDoc);
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json'},
@@ -60,21 +60,21 @@ exports.handler = async (event, /* context */ ) => {
     }
 
     let parts = chopURL(event.path, 'assets');
-    let projId = '';
+    let assetId = '';
     if (parts[1]) {
-      projId = parts[1].trim();
+      assetId = parts[1].trim();
     }
 
     // Here we implement a simple CRUD interface, plus GET for list.
     switch (event.httpMethod) {
     case 'GET':
-      return projId ? await ReadOne(user.uid, projId) : await GetList(user.uid);
+      return assetId ? await ReadOne(user.uid, assetId) : await GetList(user.uid);
     case 'POST':
-      return projId ? { statusCode: 400 } : await CreateOne(user.uid, event.body);
+      return assetId ? { statusCode: 400 } : await CreateOne(user.uid, event.body);
     case 'PUT':
-      return projId ? await UpdateOne(user.uid, projId, event.body) : { statusCode: 400 };
+      return assetId ? await UpdateOne(user.uid, assetId, event.body) : { statusCode: 400 };
     case 'DELETE':
-      return projId ? await DeleteOne(user.uid, projId) : { statusCode: 400 };
+      return assetId ? await DeleteOne(user.uid, assetId) : { statusCode: 400 };
     default:
       return { statusCode: 405, body: `Unsupported method '${event.httpMethod}'.`};
     }
