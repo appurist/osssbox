@@ -5,7 +5,6 @@ let ISSUER = process.env.OSSSBOX_ISSUER;  // for the token produced
 let SECRET = process.env.OSSSBOX_SECRET;  // for JWT signing
 let ADMIN = process.env.OSSSBOX_ADMIN;    // e.g. 'admin' or the administrator's UUID
 let REGISTRATION = process.env.OSSSBOX_REGISTRATION;  // true or yes, otherwise interpreted as false.
-
 // These are OPTIONAL and have defaults.
 let API_PREFIX = process.env.OSSSBOX_API_PREFIX || '/api';
 // WARNING: Changing the API_PREFIX requires corresponding Netlify/Lambda updates 

@@ -7,12 +7,12 @@ exports.handler = async (event, /* context */ ) => {
 
     let authorization = event.headers['authorization'];
     let user = auth.getAuth(authorization)
-    let response = user.authenticated ? `Hello, ${user.display} (${user.login}) at ${user.email}.` : 'Should I know you?';
+    let response = user?.authenticated ? user : { authenticated: false };
 
     return {
       statusCode: user.authenticated ? 200 : 401,
-      // headers: { 'Content-Type': 'application/json' },
-      body: response
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(response, null, 2)
     };
   } catch (err) {
     console.error("Exception:", err.message);

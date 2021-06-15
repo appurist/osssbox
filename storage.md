@@ -61,7 +61,7 @@ Example: `users/1fd8cd99-8a56-40d6-9016-54379fee58ae.json`
 
 Example:
 
-```
+```json
 {
   "uid": "1fd8cd99-8a56-40d6-9016-54379fee58ae",
   "display": "Administrator",
@@ -74,6 +74,17 @@ Example:
 ### `users/(user)/account.json`
 Example: `users/1fd8cd99-8a56-40d6-9016-54379fee58ae/account.json`
 (additional account info for 'admin')
+
+```json
+{
+  "uid": "eeaf2286-61cb-409d-b0ca-cccb48f71633",
+  "login": "admin",
+  "display": "Administrator",
+  "email": "dev@osssbox.com"
+}
+```
+
+
 
 ### `users/(user)/projects/(project).json`
 Example: `users/1fd8cd99-8a56-40d6-9016-54379fee58ae/projects/4abfb278-eb37-44ad-9688-33f23a04cf78.json`

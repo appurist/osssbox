@@ -3,12 +3,12 @@ const {fromIni} = require("@aws-sdk/credential-provider-ini");
 const chalk = require("chalk");
 
 // Set the AWS context
-let accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-let secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-let region = process.env.REGION_ID || process.env.AWS_REGION_ID;
-let endpoint = process.env.ENDPOINT || process.env.AWS_ENDPOINT;
-let bucket = process.env.BUCKET || process.env.AWS_BUCKET;
-let profile = process.env.PROFILE_ID || process.env.AWS_PROFILE_ID;
+let accessKeyId = process.env.S3_ACCESS_KEY_ID;
+let secretAccessKey = process.env.S3_SECRET_ACCESS_KEY
+let region = process.env.S3_REGION_ID;
+let endpoint = process.env.S3_ENDPOINT;
+let bucket = process.env.S3_BUCKET;
+let profile = process.env.S3_PROFILE_ID;
 
 let Delimiter = '/';
 let s3Client;
@@ -140,7 +140,6 @@ async function docPut(Key, _doc, _bucket) {
   let result;
 
   try {
-    // Get the object} from the Amazon S3 bucket. It is returned as a ReadableStream.
     result = await s3Client.send(new PutObjectCommand({ Bucket, Key, Body }));
   } catch (err) {
     // console.error("Read error:", err.message);
