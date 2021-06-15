@@ -53,7 +53,7 @@ exports.handler = async (event, /* context */ ) => {
     let response = user;
 
     return {
-      statusCode: user.authenticated ? 200 : 401,
+      statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(response, null, 2)
     };
