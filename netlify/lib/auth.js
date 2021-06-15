@@ -1,13 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require ('bcrypt');
+const config = require('../lib/config');
 
 const saltRounds = 12;
-
-let ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT || process.env.ADMIN;
-let SECRET = process.env.OSSSBOX_SECRET || process.env.AUTH_SECRET;
-if (!SECRET) {
-  console.error("You must specify either OSSSBOX_SECRET or AUTH_SECRET environment variables.")
-}
 
 function NoSuchUser() {
   return Object.assign({}, { authenticated: false });
@@ -25,12 +20,13 @@ function checkPassword(password, hash, salt) {
 }
 
 function makeToken(user, issuer) {
-  return jwt.sign(user, SECRET, { issuer })
+  return jwt.sign(user, config.SECRET, { issuer })
 }
 
 function makeUserResponse(user) {
-  let response = Object.assign({ }, user)    
-  response.administrator = (response.login === ADMIN_ACCOUNT) || (response.uid === ADMIN_ACCOUNT);
+  let response = Object.assign({ }, user)
+  response.authenticated = !!response.uid;
+  response.administrator = (response.login === config.ADMIN) || (response.uid === config.ADMIN);
   return response;
 }
 
@@ -39,14 +35,13 @@ function verifyToken(token) {
   if (!token)
     return user;
 
-  let result = jwt.verify(token, SECRET, function(err, decoded) {
+  let result = jwt.verify(token, config.SECRET, function(err, decoded) {
     if (err)
       return user;
 
     // log.info("Storing user for token:", decoded);
     user = makeUserResponse(decoded);
     user.token = token;
-    user.authenticated = true;
     return user;
   });
   return result;
