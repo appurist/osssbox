@@ -30,6 +30,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "latest",
     "@aws-sdk/credential-provider-ini": "latest",
+    "@aws-sdk/s3-presigned-post": "^3.18.0",
     "bcrypt": "^5.0.1",
     "jsonwebtoken": "latest",
     "uuid-random": "latest"
