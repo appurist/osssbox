@@ -26,6 +26,7 @@ exports.handler = async (event, /* context */ ) => {
     let body = JSON.parse(event.body);
     if (!body.login) return { statusCode: 401 };
     let login = body.login.trim();
+    let password = body.password.trim();
 
     s3api.connect();
 
@@ -40,6 +41,13 @@ exports.handler = async (event, /* context */ ) => {
       console.error(`Document for user '${login}' does not include a user.`)
       return { statusCode: 401 };
     }
+
+    // Now verify the password
+    if (!auth.checkPassword(password, data.credentials.hash)) {
+      console.error(`Login failed for user '${login}': wrong password.`)
+      return { statusCode: 401 };
+    }
+
     let user = data.user;
     if (!user?.uid) {
       console.error(`Document for user '${login}' does not include a UID.`)
@@ -53,7 +61,7 @@ exports.handler = async (event, /* context */ ) => {
     let response = user;
 
     return {
-      statusCode: 200,
+      statusCode: user.authenticated ? 200 : 401,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(response, null, 2)
     };
