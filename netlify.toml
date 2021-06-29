@@ -19,6 +19,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/logout/*"
+  to = "/.netlify/functions/logout"
+  status = 200
+
+[[redirects]]
   from = "/api/profile/*"
   to = "/.netlify/functions/profile"
   status = 200

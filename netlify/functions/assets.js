@@ -32,7 +32,8 @@ async function CreateOne(userId, json) {
   let assetId = uuid();
   let doc;
   try {
-    doc = JSON.parse(json);
+    //doc = JSON.parse(json);
+    doc = json;
   } catch (err) {
     return {
       statusCode: 400,
