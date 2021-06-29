@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>A File Upload Demo</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    .aligner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    #drop {
+      height: 200px;
+      width: 200px;
+      border-radius: 100px;
+      color: #fff;
+      background-color: #baf;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="aligner">
+    <div id="drop">Drop files here.</div>
+    <div id="list">
+      <h1>Uploaded Files:</h1>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI0M2Q0NTYzMy03NDFmLTQxNWYtOWZmNy01MmZkYTVlZTAxZDUiLCJsb2dpbiI6ImFkbWluIiwiZGlzcGxheSI6IkFkbWluaXN0cmF0b3IiLCJlbWFpbCI6ImRldkBvc3NzYm94LmNvbSIsImF1dGhlbnRpY2F0ZWQiOnRydWUsImFkbWluaXN0cmF0b3IiOnRydWUsImlhdCI6MTYyMzcyMzIyMiwiaXNzIjoiQXBwdXJpc3QgU29mdHdhcmUifQ.SXTQYyDhvjqHEonrFChcABgMobyshH8VR_WjMMBofoc';
+    const TEST_USER = '43d45633-741f-415f-9ff7-52fda5ee01d5';
+
+    var drop = document.getElementById('drop');
+    var list = document.getElementById('list');
+    var apiBaseURL = "http://localhost:8123/api";
+
+    function cancel(e) {
+      e.preventDefault();
+      return false;
+    }
+
+    function handleDrop(e){
+      e.preventDefault();
+      var dt    = e.dataTransfer;
+      var files = dt.files;
+      for (var i=0; i<files.length; i++) {
+        var file = files[i];
+        var reader = new FileReader();
+        let url = '';
+        reader.addEventListener('loadend', function(e){
+          fetch(apiBaseURL+"/upload", {
+            method: "POST",
+            headers: {
+              'Sec-Fetch-Mode': 'no-cors',
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer '+TEST_TOKEN
+            },
+            body: JSON.stringify({
+              name: file.name,
+              type: file.type
+            })
+          })
+          .then(response => response.json())
+          .then(json => {
+            console.log("JSON is", json);
+/*            
+            url = json.upload.url;
+            return fetch(url, {
+              method: "PUT",
+              headers: {
+                'Sec-Fetch-Mode': 'no-cors',
+                'Access-Control-Allow-Origin': '*'
+              },
+*/
+            url = apiBaseURL+"/assets";
+            return fetch(url, {
+              method: "POST",
+              headers: {
+                //'Sec-Fetch-Mode': 'no-cors',
+                //'Access-Control-Allow-Origin': '*'
+                //'Content-Type': 'application/json',
+                'Authorization': 'Bearer '+TEST_TOKEN
+              },
+
+              body: new Blob([reader.result], {type: file.type})
+            })
+            .then(response => {
+              console.log("response is:", response);
+            })
+            .catch(err => {
+              console.error("Fetch error:", err);
+            });
+          })
+          .then(() => {
+            var uploadedFileNode = document.createElement('div');
+            uploadedFileNode.innerHTML = '<code>'+ url + '</code>';
+            list.appendChild(uploadedFileNode);
+          })
+          .catch(err => {
+            console.error("Fetch error:", err);
+          });
+        });
+        reader.readAsArrayBuffer(file);
+      }
+      return false;
+    }
+
+    // Tells the browser that we *can* drop on this target
+    drop.addEventListener('dragenter', cancel);
+    drop.addEventListener('dragover', cancel);
+    drop.addEventListener('drop', handleDrop);
+
+  </script>
+</body>
+</html>
