@@ -34,13 +34,14 @@ exports.handler = async (event, /* context */ ) => {
 
     // Request a signed upload URL from S3
     let meta = Object.assign({ }, doc, {uid: assetId});
-    let upload = await s3api.getUploadURL(`users/${user.uid}/assets/${assetId}.blob`);
+    let path = `users/${user.uid}/assets/${assetId}`; // does not include fn extension
+    let upload = await s3api.getUploadURL(path+'.blob');
     if (!upload) {
       return { statusCode: 500, body: `Error: Could not obtain upload URL for user '${user.uid}'.`};
     }
 
     // We have an upload URL, create the metadata doc and return the URL
-    result = await s3api.docPut(`users/${user.uid}/assets/${assetId}.json`, meta);
+    result = await s3api.docPut(path+'.json', meta);
     if (!result) {
       return { statusCode: 500, body: `Error: Could not store asset for user '${user.uid}'.`};
     }
