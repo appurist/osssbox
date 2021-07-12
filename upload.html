@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>A File Upload Demo</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    .aligner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    #drop {
+      height: 200px;
+      width: 200px;
+      border-radius: 100px;
+      color: #fff;
+      background-color: #baf;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="aligner">
+    <div id="drop">Drop files here.</div>
+    <div id="list">
+      <h1>Uploaded Files:</h1>
+    </div>
+  </div>
+
+  <script type="module">
+    // const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+    const TEST_TOKEN = 'x';
+    const TEST_USER = '43d45633-741f-415f-9ff7-52fda5ee01d5';
+
+    var drop = document.getElementById('drop');
+    var list = document.getElementById('list');
+    var apiBaseURL = document.location.origin+'/api'; // TODO: should get this suffix from /ping, but for now...
+
+    function cancel(e) {
+      e.preventDefault();
+      return false;
+    }
+
+    function uuidv4() {
+      const a = crypto.getRandomValues(new Uint16Array(8));
+      let i = 0;
+      return '00-0-4-1-000'.replace(/[^-]/g, 
+        s => (a[i++] + s * 0x10000 >> s).toString(16).padStart(4, '0')
+      );
+    }
+
+    function handleDrop(e){
+      e.preventDefault();
+      var dt    = e.dataTransfer;
+      var files = dt.files;
+      for (var i=0; i<files.length; i++) {
+        var file = files[i];
+        var reader = new FileReader();
+        reader.addEventListener('loadend', function(e) {
+          let userId = '43d45633-741f-415f-9ff7-52fda5ee01d5';
+
+          let url = "http://localhost:8123/api/upload";
+          let headers = {
+            'Authorization': 'Bearer '+TEST_TOKEN
+          }
+          let meta = {
+            name: file.name,
+            size: file.size,
+            lastModified: file.lastModified,
+            type: file.type
+          }
+          let body = JSON.stringify(meta);
+
+          fetch(url, { method: "POST", headers, body})
+          .then(response => {
+            if (response.ok) {
+              let data = response.json();
+              return data;
+            }
+            console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
+            throw new Error(`${response.status} "${response.statusText}`);
+          })
+          .then(async (data) => {
+            console.log("JSON response is", data);
+            // let postURL = data.upload.url + '/' + data.upload.fields.key;
+            let postURL = data.upload.url;
+
+            /*
+            const formData = new FormData();
+            formData.append("Content-Type", file.type);
+            Object.entries(data.upload.fields).forEach(([k, v]) => {
+              formData.append(k, v);
+            });
+            formData.append("file", file);
+
+            const postRes = await fetch(postURL, {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!postRes.ok) {
+              throw postRes;
+            }
+            console.log("Upload success.");
+            */
+
+            headers = {
+              // 'Content-Type': 'application/octet-stream',
+              'Content-Type': file.type,
+              'Sec-Fetch-Mode': 'no-cors',
+              'Access-Control-Allow-Origin': '"*"'
+            };
+
+            for (let h in data.upload.fields) {
+              headers[h] = data.upload.fields[h];
+            }
+
+            let body = file;
+
+            fetch(postURL, { method: "POST", headers, body })
+            .then(response => {
+              if (response.ok) {
+                let json = response.json();
+                return json;
+              }
+              console.error(`POST to ${url} returned ${response.status}: ${response.statusText}`);
+              let uploadedFileNode = document.createElement('div');
+              uploadedFileNode.innerHTML = '<div><code>'+response.status+': '+response.statusText+'<code><div>';
+              list.appendChild(uploadedFileNode);
+              throw new Error(`${response.status} "${response.statusText}`);
+            })
+            .then((resp) => {
+              console.log("resp is:", JSON.stringify(resp, null, 2));
+              let uploadedFileNode = document.createElement('div');
+              uploadedFileNode.innerHTML = '<code>'+ JSON.stringify(data, null, 2) + '</code>';
+              list.appendChild(uploadedFileNode);
+            })
+            .catch(err => {
+              console.error("Fetch error:", err);
+              let uploadedFileNode = document.createElement('div');
+              uploadedFileNode.innerHTML = '<div>'+err+'</div>';
+              list.appendChild(uploadedFileNode);
+            });
+          });
+        });  
+        reader.readAsArrayBuffer(file);
+      }
+      return false;
+    }
+
+    // Tells the browser that we *can* drop on this target
+    drop.addEventListener('dragenter', cancel);
+    drop.addEventListener('dragover', cancel);
+    drop.addEventListener('drop', handleDrop);
+
+  </script>
+</body>
+</html>
