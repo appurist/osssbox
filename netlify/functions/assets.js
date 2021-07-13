@@ -26,7 +26,7 @@ async function ReadOne(userId, assetId) {
   };
 }
 
-async function CreateOne(userId, json) {
+async function CreateDoc(userId, json) {
   s3api.connect();
 
   let assetId = uuid();
@@ -71,8 +71,8 @@ exports.handler = async (event, /* context */ ) => {
     case 'GET':
       return assetId ? await ReadOne(user.uid, assetId) : await GetList(user.uid);
     case 'POST':
-      return assetId ? { statusCode: 400 } : await CreateOne(user.uid, event.body);
-    case 'PUT':
+      return assetId ? { statusCode: 400 } : await CreateDoc(user.uid, event.body);
+    case 'PATCH':
       return assetId ? await UpdateOne(user.uid, assetId, event.body) : { statusCode: 400 };
     case 'DELETE':
       return assetId ? await DeleteOne(user.uid, assetId) : { statusCode: 400 };
