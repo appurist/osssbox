@@ -59,6 +59,35 @@
       );
     }
 
+    /**
+     * Upload file to S3 with previously received pre-signed POST data.
+     * @param presignedPostData
+     * @param file
+     * @returns {Promise<any>}
+     */
+    const uploadFileToS3 = (presignedPostData, file) => {
+      return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        Object.keys(presignedPostData.fields).forEach(key => {
+          formData.append(key, presignedPostData.fields[key]);
+        });
+        // Actual file has to be appended last.
+        formData.append("file", file);
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", presignedPostData.url, true);
+        xhr.send(formData);
+        xhr.onload = function() {
+          if (this.status < 300) {
+            console.log("S3 upload complete:", this);
+            resolve (this.status);
+          } else {
+            console.warn(`S3 upload failed: ${this.status} - ${this.statusText}\n${this.responseText}`)
+           reject(this.responseText);
+          }
+        };
+      });
+    };    
+
     function handleDrop(e){
       e.preventDefault();
       var dt    = e.dataTransfer;
@@ -92,65 +121,8 @@
           })
           .then(async (data) => {
             console.log("JSON response is", data);
-            // let postURL = data.upload.url + '/' + data.upload.fields.key;
-            let postURL = data.upload.url;
-
-            /*
-            const formData = new FormData();
-            formData.append("Content-Type", file.type);
-            Object.entries(data.upload.fields).forEach(([k, v]) => {
-              formData.append(k, v);
-            });
-            formData.append("file", file);
-
-            const postRes = await fetch(postURL, {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!postRes.ok) {
-              throw postRes;
-            }
+            await uploadFileToS3(data.upload, file);            
             console.log("Upload success.");
-            */
-
-            headers = {
-              // 'Content-Type': 'application/octet-stream',
-              'Content-Type': file.type,
-              'Sec-Fetch-Mode': 'no-cors',
-              'Access-Control-Allow-Origin': '"*"'
-            };
-
-            for (let h in data.upload.fields) {
-              headers[h] = data.upload.fields[h];
-            }
-
-            let body = file;
-
-            fetch(postURL, { method: "POST", headers, body })
-            .then(response => {
-              if (response.ok) {
-                let json = response.json();
-                return json;
-              }
-              console.error(`POST to ${url} returned ${response.status}: ${response.statusText}`);
-              let uploadedFileNode = document.createElement('div');
-              uploadedFileNode.innerHTML = '<div><code>'+response.status+': '+response.statusText+'<code><div>';
-              list.appendChild(uploadedFileNode);
-              throw new Error(`${response.status} "${response.statusText}`);
-            })
-            .then((resp) => {
-              console.log("resp is:", JSON.stringify(resp, null, 2));
-              let uploadedFileNode = document.createElement('div');
-              uploadedFileNode.innerHTML = '<code>'+ JSON.stringify(data, null, 2) + '</code>';
-              list.appendChild(uploadedFileNode);
-            })
-            .catch(err => {
-              console.error("Fetch error:", err);
-              let uploadedFileNode = document.createElement('div');
-              uploadedFileNode.innerHTML = '<div>'+err+'</div>';
-              list.appendChild(uploadedFileNode);
-            });
           });
         });  
         reader.readAsArrayBuffer(file);
