@@ -37,10 +37,11 @@
     </div>
   </div>
 
+  <!-- First, import out definition of TEST_USER and TEST_TOKEN. -->
+  <script src="./testenv.js"></script>
+
   <script type="module">
     // const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-    const TEST_TOKEN = 'x';
-    const TEST_USER = '43d45633-741f-415f-9ff7-52fda5ee01d5';
 
     var drop = document.getElementById('drop');
     var list = document.getElementById('list');
@@ -78,11 +79,11 @@
         xhr.send(formData);
         xhr.onload = function() {
           if (this.status < 300) {
-            console.log("S3 upload complete:", this);
+            // console.log("S3 upload complete:", this);
             resolve (this.status);
           } else {
             console.warn(`S3 upload failed: ${this.status} - ${this.statusText}\n${this.responseText}`)
-           reject(this.responseText);
+            reject(this.responseText);
           }
         };
       });
@@ -120,9 +121,14 @@
             throw new Error(`${response.status} "${response.statusText}`);
           })
           .then(async (data) => {
-            console.log("JSON response is", data);
-            await uploadFileToS3(data.upload, file);            
-            console.log("Upload success.");
+            // console.log("JSON response is", data);
+            let result = await uploadFileToS3(data.upload, file);
+            if (result === 204) {
+              console.log(`Upload success (${result}): ${data.meta.name} as ${data.upload.fields.key}`);
+            }
+            let uploadedFileNode = document.createElement('div');
+            uploadedFileNode.innerHTML = '<div>'+data.meta.name+'</div><div><code>'+data.upload.fields.key+'</code></div>';
+            list.appendChild(uploadedFileNode);            
           });
         });  
         reader.readAsArrayBuffer(file);

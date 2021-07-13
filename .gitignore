@@ -7,3 +7,5 @@ yarn-error.log
 appurist.ico
 keys.txt
 setenv-*.cmd
+
+testenv.js
