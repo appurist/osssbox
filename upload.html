@@ -61,6 +61,33 @@
       );
     }
 
+    const getPresignedURL = (url, token, file) => {
+      return new Promise((resolve, reject) => {
+        let headers = {
+            'Authorization': 'Bearer '+token
+          }
+          let meta = {
+            name: file.name,
+            size: file.size,
+            lastModified: file.lastModified,
+            type: file.type
+          }
+          let body = JSON.stringify(meta);
+
+          fetch(url, { method: "POST", headers, body})
+          .then(response => {
+            if (response.ok) {
+              let data = response.json();
+              resolve(data);
+            } else {
+              console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
+              // throw new Error(`${response.status} "${response.statusText}`);
+              reject(`${response.status} "${response.statusText}`);
+            }
+          })
+      });
+    }
+
     /**
      * Upload file to S3 with previously received pre-signed POST data.
      * @param presignedPostData
@@ -97,40 +124,26 @@
       for (var i=0; i<files.length; i++) {
         var file = files[i];
         var reader = new FileReader();
-        reader.addEventListener('loadend', function(e) {
+        reader.addEventListener('loadend', async function(e) {
           let userId = '43d45633-741f-415f-9ff7-52fda5ee01d5';
 
-          let url = "http://localhost:8123/api/upload";
-          let headers = {
-            'Authorization': 'Bearer '+TEST_TOKEN
-          }
-          let meta = {
-            name: file.name,
-            size: file.size,
-            lastModified: file.lastModified,
-            type: file.type
-          }
-          let body = JSON.stringify(meta);
+          let url = location.origin + '/api/upload';
 
-          fetch(url, { method: "POST", headers, body})
-          .then(response => {
-            if (response.ok) {
-              let data = response.json();
-              return data;
-            }
-            console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
-            throw new Error(`${response.status} "${response.statusText}`);
-          })
-          .then(async (data) => {
+          try {
+            let data = await getPresignedURL(url, TEST_TOKEN, file);
             // console.log("JSON response is", data);
             let result = await uploadFileToS3(data.upload, file);
             if (result === 204) {
               console.log(`Upload success (${result}): ${data.meta.name} as ${data.upload.fields.key}`);
             }
             let uploadedFileNode = document.createElement('div');
-            uploadedFileNode.innerHTML = '<div>'+data.meta.name+'</div><div><code>'+data.upload.fields.key+'</code></div>';
+            uploadedFileNode.innerHTML = `<div><b>${data.meta.name}</b> (${data.meta.size} bytes)</div><div><code>${data.upload.fields.key}</code></div>`;
             list.appendChild(uploadedFileNode);            
-          });
+            return result;
+          } catch (err) {
+            console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
+            throw new Error(`${response.status} "${response.statusText}`);
+          }
         });  
         reader.readAsArrayBuffer(file);
       }
