@@ -77,6 +77,10 @@ function normalizePrefix(Prefix) {
   return Prefix;
 }
 
+async function getAcl(key) {
+  let cmd = new s3Client.GetBucketAclCommand()
+}
+
 // pass a collection name for 'where'
 async function docList(_prefix, _bucket) {
   let list = [ ];
@@ -155,17 +159,20 @@ async function docPut(Key, _doc, _bucket) {
 }
 
 // keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
-async function getUploadURL(keyPrefix, _bucket) {
+const URL_EXPIRATION_SECONDS = 600  //Seconds before the presigned post expires. 3600 by default.
+async function getUploadURL(prefix, fn, _bucket) {
   let Bucket = _bucket || bucket;
-  let Key = keyPrefix;
-  const Conditions = [{ acl: "private" }, { bucket: Bucket }, ["starts-with", "$key", keyPrefix]];
-  const Fields = { acl: "private" };
+  let Key = prefix + fn;
+  const Conditions = [{ acl: "private" }, { bucket: Bucket }, ["starts-with", "$key", prefix]];
+  const Fields = {
+    acl: "private",
+  };
   const { url, fields } = await createPresignedPost(s3Client, {
     Bucket,
     Key,
     Conditions,
     Fields,
-    Expires: 3600, //Seconds before the presigned post expires. 3600 by default.
+    Expires: URL_EXPIRATION_SECONDS,
   });
   return { url, fields };
 }
