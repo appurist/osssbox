@@ -14,6 +14,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/ping/*"
+  to = "/.netlify/functions/ping"
+  status = 200
+
+[[redirects]]
   from = "/api/login/*"
   to = "/.netlify/functions/login"
   status = 200
@@ -44,6 +49,6 @@
   status = 200
 
 [[redirects]]
-  from = "/api/upload/*"
-  to = "/.netlify/functions/upload"
+  from = "/api/uploads/*"
+  to = "/.netlify/functions/uploads"
   status = 200
