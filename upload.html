@@ -127,7 +127,7 @@
         reader.addEventListener('loadend', async function(e) {
           let userId = '43d45633-741f-415f-9ff7-52fda5ee01d5';
 
-          let url = location.origin + '/api/upload';
+          let url = location.origin + '/api/uploads';
 
           try {
             let data = await getPresignedURL(url, TEST_TOKEN, file);

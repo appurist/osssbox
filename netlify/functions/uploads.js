@@ -4,11 +4,11 @@ const s3api = require('../lib/s3api');
 const auth = require('../lib/auth');
 const chopURL = require('../lib/chopURL');
 
-// The REST API sequence is to create a binary (blob) asset via POST to /upload to get a signed upload URL, then upload there,
-// and finally call DELETE /upload/:assetId to signal move/cleanup of the temp upload and creation of the JSON metadata object.
+// The REST API sequence is to create a binary (blob) asset via POST to /uploads to get a signed upload URL, then upload there,
+// and finally call DELETE /uploads/:assetId to signal move/cleanup of the temp upload and creation of the JSON metadata object.
 // If DELETE is not called, assets will be eventually be auto-deleted from temp upload storage.
 
-async function CreateUpload(user, doc) {
+async function CreateSignedUpload(user, doc) {
   let assetId = uuid();
 
   s3api.connect();
@@ -54,7 +54,7 @@ exports.handler = async (event, /* context */ ) => {
     }
 
     if (event.httpMethod === 'GET') {
-      return await CreateUpload( user, { } );
+      return await CreateSignedUpload( user, { } );
     }
 
     let parts = chopURL(event.path, 'upload');
@@ -82,7 +82,7 @@ exports.handler = async (event, /* context */ ) => {
     // Here we implement a simple CRUD interface, plus GET for list.
     switch (event.httpMethod) {
     case 'POST':
-      return assetId ? { statusCode: 400 } : await CreateUpload(user, doc);
+      return assetId ? { statusCode: 400 } : await CreateSignedUpload(user, doc);
     case 'DELETE':
       return assetId ? await CompleteUpload(user.uid, assetId) : { statusCode: 400, body: 'Upload completion without asset ID.'};
     default:
