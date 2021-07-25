@@ -47,11 +47,17 @@ async function CompleteUpload(user, assetId, doc) {
     let fromKey = `incoming/${user.uid}/${assetId}.blob`;
     let toKey = `users/${user.uid}/assets/${assetId}.blob`;
     // return the URL info + meta info
-    result = await s3api.objMove(fromKey, toKey, 0)
+    let rc = 500;
+    result = await s3api.objMove(fromKey, toKey, 0);
+    if (result.$metadata && result.$metadata.httpStatusCode) 
+      rc = result.$metadata.httpStatusCode;
+    result = await s3api.docPut(`users/${user.uid}/assets/${assetId}.json`, meta);
+    if (result.$metadata && result.$metadata.httpStatusCode) 
+      rc = result.$metadata.httpStatusCode;
     return {
-      statusCode: 200,
+      statusCode: rc,  // created
       headers: { 'Content-Type': 'application/json'},
-      body: JSON.stringify(result, null, 2)
+      body: JSON.stringify(meta, null, 2)
     };
   } catch (err) {
     return {
