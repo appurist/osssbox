@@ -37,11 +37,32 @@ async function CreateSignedUpload(user, doc) {
   }
 }
 
-async function CompleteUpload(userId, assetId) {
-  // TODO: S3-copy assetId.json and assetId.blob to users/userId/assets, delete originals
-  return { statusCode: 200, body: 'Not implemented yet.'}
+async function CompleteUpload(user, assetId, doc) {
+  // S3-copy assetId.json and assetId.blob to users/userId/assets, delete originals
+  s3api.connect();
+
+  try {
+    // Request a signed upload URL from S3
+    let meta = Object.assign({ }, doc, {uid: assetId});
+    let fromKey = `incoming/${user.uid}/${assetId}.blob`;
+    let toKey = `users/${user.uid}/assets/${assetId}.blob`;
+    // return the URL info + meta info
+    result = await s3api.objMove(fromKey, toKey, 0)
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json'},
+      body: JSON.stringify(result, null, 2)
+    };
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: 'Bad JSON body: '+err.message
+    };
+  }
 }
 
+// A POST to /uploads withOUT an asset ID requests a pre-signed S3 upload URL for a new asset.
+// A POST to /uploads WITH an asset ID confirms the S3 upload and moves the files into place.
 exports.handler = async (event, /* context */ ) => {
   try {
     console.log(`${event.path} [${event.httpMethod}] from ${event.headers["client-ip"]}`);
@@ -53,19 +74,10 @@ exports.handler = async (event, /* context */ ) => {
       return { statusCode: 401, body: "Not authorized." };
     }
 
-    if (event.httpMethod === 'GET') {
-      return await CreateSignedUpload( user, { } );
-    }
-
-    let parts = chopURL(event.path, 'upload');
+    let parts = chopURL(event.path, 'uploads');
     let assetId = undefined;
     if (parts[1]) {
       assetId = parts[1].trim();
-    }
-
-    // Here we implement a simple CRUD interface, plus GET for list.
-    if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, body: `Unsupported method '${event.httpMethod}'.`};
     }
 
     // It's a new asset, give it a new asset ID and presigned URL for upload
@@ -82,9 +94,7 @@ exports.handler = async (event, /* context */ ) => {
     // Here we implement a simple CRUD interface, plus GET for list.
     switch (event.httpMethod) {
     case 'POST':
-      return assetId ? { statusCode: 400 } : await CreateSignedUpload(user, doc);
-    case 'DELETE':
-      return assetId ? await CompleteUpload(user.uid, assetId) : { statusCode: 400, body: 'Upload completion without asset ID.'};
+      return assetId ? await CompleteUpload(user, assetId, doc) : await CreateSignedUpload(user, doc);
     default:
       return { statusCode: 405, body: `Unsupported method '${event.httpMethod}'.`};
     }

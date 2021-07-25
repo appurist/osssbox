@@ -82,11 +82,44 @@
             } else {
               console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
               // throw new Error(`${response.status} "${response.statusText}`);
+              reject(response);
+            }
+          })
+          .catch (response => {
+            console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
+              // throw new Error(`${response.status} "${response.statusText}`);
+            reject(response);
+          });
+      });
+    }
+
+    const confirmUpload = (url, token, file) => {
+      return new Promise((resolve, reject) => {
+        let headers = {
+            'Authorization': 'Bearer '+token
+          }
+          let meta = {
+            name: file.name,
+            size: file.size,
+            lastModified: file.lastModified,
+            type: file.type
+          }
+          let body = JSON.stringify(meta);
+
+          fetch(url, { method: "POST", headers, body})
+          .then(response => {
+            if (response.ok) {
+              let data = response.json();
+              resolve(data);
+            } else {
+              console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
+              // throw new Error(`${response.status} "${response.statusText}`);
               reject(`${response.status} "${response.statusText}`);
             }
           })
       });
     }
+
 
     /**
      * Upload file to S3 with previously received pre-signed POST data.
@@ -132,15 +165,23 @@
           try {
             let data = await getPresignedURL(url, TEST_TOKEN, file);
             // console.log("JSON response is", data);
+            let assetId = data.meta.uid;
+
             let result = await uploadFileToS3(data.upload, file);
             if (result === 204) {
-              console.log(`Upload success (${result}): ${data.meta.name} as ${data.upload.fields.key}`);
+              console.log(`Uploaded to S3 (${result}): ${data.meta.name} as ${data.upload.fields.key}`);
             }
+
+            result = await confirmUpload(url+'/'+assetId, TEST_TOKEN, file);
+            if (result === 204) {
+              console.log(`Upload confirmed (${result}): ${data.meta.name} as asset ${assetId}`);
+            }
+
             let uploadedFileNode = document.createElement('div');
             uploadedFileNode.innerHTML = `<div><b>${data.meta.name}</b> (${data.meta.size} bytes)</div><div><code>${data.upload.fields.key}</code></div>`;
             list.appendChild(uploadedFileNode);            
             return result;
-          } catch (err) {
+          } catch (response) {
             console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
             throw new Error(`${response.status} "${response.statusText}`);
           }

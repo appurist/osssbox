@@ -1,4 +1,6 @@
-const { S3Client, ListObjectsCommand, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, ListObjectsCommand, GetObjectCommand, DeleteObjectCommand,
+        GetBucketLifecycleConfigurationCommand, PutBucketLifecycleConfigurationCommand,
+        PutObjectCommand, CopyObjectCommand } = require("@aws-sdk/client-s3");
 const { fromIni } = require("@aws-sdk/credential-provider-ini");
 const { createPresignedPost } = require("@aws-sdk/s3-presigned-post");
 
@@ -32,7 +34,6 @@ function connect() {
   if (!(region || endpoint)) throw new Error('Neither AWS region nor endpoint was specified, e.g. "us-east-1" or "ewr1.vultrobjects.com"');
 
   s3Client = new S3Client({ region, credentials, endpoint });
-
 }
 
 function setAccessKey(_key) {
@@ -158,6 +159,51 @@ async function docPut(Key, _doc, _bucket) {
   return result;
 }
 
+function msFromNow(ms) {
+  let now = Date.now();
+  return now.getTime() + ms;
+}
+
+async function objCopy(fromKey, toKey, _bucket, expiryMs) {
+  let Bucket = _bucket || bucket;
+  const params = {
+    CopySource: `${Bucket}/${fromKey}`,
+    Key: `${toKey}`,
+    MetadataDirective: 'COPY',  // Copies over metadata like contentType as well
+    Bucket: bucket
+  };
+  if (expiryMs) {
+    params.Expires = msFromNow(expiryMs);
+  }
+
+  return await s3Client.send(new CopyObjectCommand(params));
+}
+
+async function objDelete(Key, _bucket) {
+  let Bucket = _bucket || bucket;
+  return await s3Client.send(new DeleteObjectCommand({ Key, Bucket }));
+}
+
+// Store the document 'Key' in '_bucket'.
+async function objMove(fromKey, toKey, _bucket, expiryMs) {
+  let result;
+  let Bucket = _bucket || bucket;
+
+  try {
+    result = await objCopy(fromKey, toKey, Bucket, expiryMs);
+  } catch (err) {
+    console.error("S3 move (copy) error:", chalk.red(err.message));
+    return undefined;
+  }
+  try {
+    result = await objDelete(fromKey, Bucket);
+  } catch (err) {
+    console.error("S3 move (delete) error:", chalk.red(err.message));
+    return undefined;
+  }
+  return result;
+}
+
 const INCOMING_ONE_DAY = 
   {
     "ID": "osssboxIncomingExpiry",
@@ -212,6 +258,6 @@ module.exports = {
   setAccessKey, setSecretAccessKey, setProfile,
   setRegion, setEndpoint, setBucket,
   connect, normalizePrefix, getUploadURL,
-  docList, docGet, docPut
+  docList, docGet, docPut, objMove, objDelete,
   setBucketLifecycleRules, getBucketLifecycleRules
 }

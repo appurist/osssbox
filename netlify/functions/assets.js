@@ -1,3 +1,5 @@
+const path = require('path');
+
 const uuid = require('uuid-random');
 
 const auth = require('../lib/auth');
@@ -26,10 +28,9 @@ async function ReadOne(userId, assetId) {
   };
 }
 
-async function CreateDoc(userId, json) {
+async function CreateDoc(userId, assetPath, json) {
   s3api.connect();
 
-  let assetId = uuid();
   let doc;
   try {
     //doc = JSON.parse(json);
@@ -40,8 +41,24 @@ async function CreateDoc(userId, json) {
       body: 'Bad JSON body: '+err.message
     };
   }
-  let newDoc = Object.assign({ }, doc, {uid: assetId});
-  let result = await s3api.docPut(`users/${userId}/assets/${assetId}.json`, newDoc);
+
+  let assetId;
+  let result;
+  if (assetPath) {
+    assetId = path.basename(assetPath);
+    if (assetId !== assetPath) {
+      return { statusCode: 400, body: `Invalid asset ID: '${assetPath}'.` };
+    }
+
+    let fromPath = `incoming/${userId}/${assetId}.blob`;
+    let toPath = `users/${userId}/assets/${assetId}.blob`;
+    result = s3api.moveObject(fromPath, toPath);
+
+  }
+  doc.uid = assetId || uuid();
+
+  result = await s3api.docPut(`users/${userId}/assets/${assetId}.json`, newDoc);
+  console.log("CreateDoc returns:", result);
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json'},
@@ -71,7 +88,7 @@ exports.handler = async (event, /* context */ ) => {
     case 'GET':
       return assetId ? await ReadOne(user.uid, assetId) : await GetList(user.uid);
     case 'POST':
-      return assetId ? { statusCode: 400 } : await CreateDoc(user.uid, event.body);
+      return assetId ? { statusCode: 400 } : await CreateDoc(user.uid, assetId, event.body);
     case 'PATCH':
       return assetId ? await UpdateOne(user.uid, assetId, event.body) : { statusCode: 400 };
     case 'DELETE':
