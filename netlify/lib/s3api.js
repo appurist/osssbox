@@ -158,15 +158,46 @@ async function docPut(Key, _doc, _bucket) {
   return result;
 }
 
+const INCOMING_ONE_DAY = 
+  {
+    "ID": "osssboxIncomingExpiry",
+    Expiration: {
+      Days: 1,
+    },
+    Filter: {
+      Prefix: "incoming/",
+    },
+    Status: "Enabled",
+  }
+const OSSSBOX_LIFECYCLE = { Rules: [ INCOMING_ONE_DAY ] };
+
+async function setBucketLifecycleRules(_bucket) {
+  let Bucket = _bucket || bucket;
+  if (s3Client) connect();
+
+  let LifecycleConfiguration =  OSSSBOX_LIFECYCLE;
+
+  return await s3Client.send(new PutBucketLifecycleConfigurationCommand({ Bucket, LifecycleConfiguration }));
+}
+async function getBucketLifecycleRules(_bucket) {
+  let Bucket = _bucket || bucket;
+  if (s3Client) connect();
+  let lifecycle = await s3Client.send(new GetBucketLifecycleConfigurationCommand({ Bucket }));
+  let Rules = { };
+  for (let rule of lifecycle.Rules) {
+    Rules[rule.ID] = {Status: rule.Status, Prefix: rule.Filter.Prefix, Expiration: rule.Expiration.Days}
+  }
+  return Rules;
+}
+
 // keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
 const URL_EXPIRATION_SECONDS = 600  //Seconds before the presigned post expires. 3600 by default.
+const URL_ACL = "private";
 async function getUploadURL(prefix, fn, _bucket) {
   let Bucket = _bucket || bucket;
   let Key = prefix + fn;
-  const Conditions = [{ acl: "private" }, { bucket: Bucket }, ["starts-with", "$key", prefix]];
-  const Fields = {
-    acl: "private",
-  };
+  const Conditions = [{ acl: URL_ACL }, { bucket: Bucket }, ["starts-with", "$key", prefix]];
+  const Fields = { acl: URL_ACL };
   const { url, fields } = await createPresignedPost(s3Client, {
     Bucket,
     Key,
@@ -182,4 +213,5 @@ module.exports = {
   setRegion, setEndpoint, setBucket,
   connect, normalizePrefix, getUploadURL,
   docList, docGet, docPut
+  setBucketLifecycleRules, getBucketLifecycleRules
 }
