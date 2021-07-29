@@ -1,0 +1,46 @@
+Folder structure:
+  incoming/:userID/:assetID.blob
+  users/:userID/assets/:assetID.blob
+  users/:userID/assets/:assetID.json
+  users/:userID/projects/:projectID.json
+__________
+
+POST /uploads	(upload request)
+- returns S3 signed upload URL and asset ID,
+  for upload to incoming/:uid/:assetId
+
+POST /assets/:assetId	(upload confirmation)
+- creates new :assetId.json metadata 
+  to users/:uid/assets/:assetId.json (withBlob: true)
+- copies the incoming/:uid/:assetId.blob
+  to users/:uid/assets/:assetId.blob (parallel to :assetId.json)
+- deletes the temp incoming/:uid/:assetId.blob
+
+POST /assets
+- creates new JSON doc (withBlob: false) directly
+  for :assetId.json to users/:uid/assets/:assetId.json
+
+PUT /assets/:id
+- replaces existing :assetId.json metadata
+  at users/:uid/assets/:assetId.json
+
+PATCH /assets/:id
+- merges specified metadata into existing :assetId.json metadata
+  at users/:uid/assets/:assetId.json
+
+DELETE /assets/:id
+- removes the existing :assetId.json metadata and any corresponding blob
+  at users/:uid/assets/:assetId.json
+
+GET /assets/:id
+- returns the :assetID.json metadata from users/:uid/assets/:assetId.json
+  and if withBlob includes signed GET URL for blob
+
+All routes after the first two also supported for /projects,
+no /uploads equivalent or POST with :assetID (blob not supported, json assumed):
+
+POST /projects
+PUT /projects/:id
+PATCH /projects/:id
+DELETE /projects/:id
+GET /projects/:id

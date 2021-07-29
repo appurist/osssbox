@@ -4,3 +4,8 @@ apidoc/
 .vscode/settings.json
 functions-event.json
 yarn-error.log
+appurist.ico
+keys.txt
+setenv-*.cmd
+
+testenv.js

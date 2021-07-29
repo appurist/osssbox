@@ -1,4 +1,6 @@
-const { S3Client, ListObjectsCommand, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, ListObjectsCommand, GetObjectCommand, DeleteObjectCommand,
+        GetBucketLifecycleConfigurationCommand, PutBucketLifecycleConfigurationCommand,
+        PutObjectCommand, CopyObjectCommand } = require("@aws-sdk/client-s3");
 const { fromIni } = require("@aws-sdk/credential-provider-ini");
 const { createPresignedPost } = require("@aws-sdk/s3-presigned-post");
 
@@ -32,7 +34,6 @@ function connect() {
   if (!(region || endpoint)) throw new Error('Neither AWS region nor endpoint was specified, e.g. "us-east-1" or "ewr1.vultrobjects.com"');
 
   s3Client = new S3Client({ region, credentials, endpoint });
-
 }
 
 function setAccessKey(_key) {
@@ -75,6 +76,10 @@ function normalizePrefix(Prefix) {
   }
 
   return Prefix;
+}
+
+async function getAcl(key) {
+  let cmd = new s3Client.GetBucketAclCommand()
 }
 
 // pass a collection name for 'where'
@@ -154,18 +159,97 @@ async function docPut(Key, _doc, _bucket) {
   return result;
 }
 
-// keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
-async function getUploadURL(keyPrefix, _bucket) {
+function msFromNow(ms) {
+  let now = Date.now();
+  return now.getTime() + ms;
+}
+
+async function objCopy(fromKey, toKey, _bucket, expiryMs) {
   let Bucket = _bucket || bucket;
-  let Key = keyPrefix;
-  const Conditions = [{ acl: "private" }, { bucket: Bucket }, ["starts-with", "$key", keyPrefix]];
-  const Fields = { acl: "private" };
+  const params = {
+    CopySource: `${Bucket}/${fromKey}`,
+    Key: `${toKey}`,
+    MetadataDirective: 'COPY',  // Copies over metadata like contentType as well
+    Bucket: bucket
+  };
+  if (expiryMs) {
+    params.Expires = msFromNow(expiryMs);
+  }
+
+  return await s3Client.send(new CopyObjectCommand(params));
+}
+
+async function objDelete(Key, _bucket) {
+  let Bucket = _bucket || bucket;
+  return await s3Client.send(new DeleteObjectCommand({ Key, Bucket }));
+}
+
+// Store the document 'Key' in '_bucket'.
+async function objMove(fromKey, toKey, _bucket, expiryMs) {
+  let result;
+  let Bucket = _bucket || bucket;
+
+  try {
+    result = await objCopy(fromKey, toKey, Bucket, expiryMs);
+  } catch (err) {
+    console.error("S3 move (copy) error:", chalk.red(err.message));
+    return undefined;
+  }
+  try {
+    result = await objDelete(fromKey, Bucket);
+  } catch (err) {
+    console.error("S3 move (delete) error:", chalk.red(err.message));
+    return undefined;
+  }
+  return result;
+}
+
+const INCOMING_ONE_DAY = 
+  {
+    "ID": "osssboxIncomingExpiry",
+    Expiration: {
+      Days: 1,
+    },
+    Filter: {
+      Prefix: "incoming/",
+    },
+    Status: "Enabled",
+  }
+const OSSSBOX_LIFECYCLE = { Rules: [ INCOMING_ONE_DAY ] };
+
+async function setBucketLifecycleRules(_bucket) {
+  let Bucket = _bucket || bucket;
+  if (s3Client) connect();
+
+  let LifecycleConfiguration =  OSSSBOX_LIFECYCLE;
+
+  return await s3Client.send(new PutBucketLifecycleConfigurationCommand({ Bucket, LifecycleConfiguration }));
+}
+async function getBucketLifecycleRules(_bucket) {
+  let Bucket = _bucket || bucket;
+  if (s3Client) connect();
+  let lifecycle = await s3Client.send(new GetBucketLifecycleConfigurationCommand({ Bucket }));
+  let Rules = { };
+  for (let rule of lifecycle.Rules) {
+    Rules[rule.ID] = {Status: rule.Status, Prefix: rule.Filter.Prefix, Expiration: rule.Expiration.Days}
+  }
+  return Rules;
+}
+
+// keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
+const URL_EXPIRATION_SECONDS = 600  //Seconds before the presigned post expires. 3600 by default.
+const URL_ACL = "private";
+async function getUploadURL(prefix, fn, _bucket) {
+  let Bucket = _bucket || bucket;
+  let Key = prefix + fn;
+  const Conditions = [{ acl: URL_ACL }, { bucket: Bucket }, ["starts-with", "$key", prefix]];
+  const Fields = { acl: URL_ACL };
   const { url, fields } = await createPresignedPost(s3Client, {
     Bucket,
     Key,
     Conditions,
     Fields,
-    Expires: 3600, //Seconds before the presigned post expires. 3600 by default.
+    Expires: URL_EXPIRATION_SECONDS,
   });
   return { url, fields };
 }
@@ -174,5 +258,6 @@ module.exports = {
   setAccessKey, setSecretAccessKey, setProfile,
   setRegion, setEndpoint, setBucket,
   connect, normalizePrefix, getUploadURL,
-  docList, docGet, docPut
+  docList, docGet, docPut, objMove, objDelete,
+  setBucketLifecycleRules, getBucketLifecycleRules
 }
