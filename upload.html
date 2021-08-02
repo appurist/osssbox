@@ -10,6 +10,9 @@
     body {
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
+    input {
+      margin: 12px;
+    }
     .centered {
       height: 100%;
       display: flex;
@@ -49,6 +52,7 @@
     <div id="error-div" class="centered errored"></div>
   </div>
   <div id="upload-div" class="centered">
+    <input type="button" value="Logout" onclick="return doLogout();" />
     <div id="drop">Drop Files Here</div>
     <div id="list">
       <h1>Uploaded Files:</h1>
@@ -69,6 +73,11 @@
     uploadDiv.style.display = token ? "flex" : "none";
   }
 
+  let saved = localStorage.getItem('user');
+  if (saved) {
+    let user = JSON.parse(saved);
+    token = user.token;
+  }
   updateDivs();
 
   function doLogin() {
@@ -82,19 +91,30 @@
         if (response.ok) {
           let data = await response.json();
           token = data.token;
+          localStorage.setItem('user', JSON.stringify(data));
           console.error(`Logged in as ${data.login} ("${data.display}").`);
           updateDivs();
         } else {
           console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
           errorDiv.innerHTML = `<p>POST to ${url} returned ${response.status} "${response.statusText}"</p>`;
+          localStorage.removeItem('user');
+          token = null;
           updateDivs();
         }
       })
       .catch (err => {
         console.error(`POST to ${url} returned:`, err);
+        localStorage.removeItem('user');
+          token = null;
         // throw new Error(`${response.status} "${response.statusText}`);
         updateDivs();
       });
+  }
+
+  function doLogout() {
+    token = null;
+    localStorage.removeItem('user');
+    updateDivs();
   }
   </script>
 
