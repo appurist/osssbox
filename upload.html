@@ -10,12 +10,17 @@
     body {
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
-    .aligner {
+    .centered {
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
+    }
+    .errored {
+      color: red;
+      height: 32px;
+      margin-bottom: 8px;
     }
     #drop {
       height: 400px;
@@ -31,15 +36,68 @@
   </style>
 </head>
 <body>
-  <div class="aligner">
+  <div id="login-div" class="centered">
+    <p>
+      <label>Username : </label>   
+      <input id="username" type="text" placeholder="Enter Username" name="username" required>  
+    </p>
+    <p>
+      <label>Password : </label>   
+      <input id="password" type="password" placeholder="Enter Password" name="password" required>  
+    </p>
+    <input type="button" value="Login" onclick="return doLogin();" />
+    <div id="error-div" class="centered errored"></div>
+  </div>
+  <div id="upload-div" class="centered">
     <div id="drop">Drop Files Here</div>
     <div id="list">
       <h1>Uploaded Files:</h1>
     </div>
   </div>
 
-  <!-- First, import out definition of TEST_USER and TEST_TOKEN. -->
-  <script src="./testenv.js"></script>
+  <script>
+  var user = document.getElementById('username');
+  var pass = document.getElementById('password');
+  var loginDiv = document.getElementById('login-div');
+  var errorDiv = document.getElementById('error-div');
+  var uploadDiv = document.getElementById('upload-div');
+
+  let token = null;
+  
+  function updateDivs() {
+    loginDiv.style.display = token ? "none" : "flex";
+    uploadDiv.style.display = token ? "flex" : "none";
+  }
+
+  updateDivs();
+
+  function doLogin() {
+    let login = user.value;
+    let password = pass.value;
+    console.log(`Login by '${login}''...`);
+    let url = location.origin + '/api/login';
+    let body = JSON.stringify({login, password}, null, 2);
+    fetch(url, { method: "POST", body})
+      .then(async response => {
+        if (response.ok) {
+          let data = await response.json();
+          token = data.token;
+          console.error(`Logged in as ${data.login} ("${data.display}").`);
+          updateDivs();
+        } else {
+          console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
+          errorDiv.innerHTML = `<p>POST to ${url} returned ${response.status} "${response.statusText}"</p>`;
+          updateDivs();
+        }
+      })
+      .catch (err => {
+        console.error(`POST to ${url} returned:`, err);
+        // throw new Error(`${response.status} "${response.statusText}`);
+        updateDivs();
+      });
+  }
+  </script>
+
 
   <script type="module">
     // const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
@@ -107,14 +165,16 @@
           let body = JSON.stringify(meta);
 
           fetch(url, { method: "POST", headers, body})
-          .then(response => {
-            if (response.ok) {
-              let data = response.json();
-              resolve(data);
+          .then(async response => {
+            let { ok, status, statusText } = response;
+            if (ok) {
+              let data = await response.json();
+              resolve({ ok, status, statusText })
             } else {
               console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);
               // throw new Error(`${response.status} "${response.statusText}`);
-              reject(`${response.status} "${response.statusText}`);
+              // reject(`${response.status} "${response.statusText}`);
+              resolve({ ok, status, statusText })
             }
           })
       });
@@ -163,7 +223,7 @@
           let url = location.origin + '/api/uploads';
 
           try {
-            let data = await getPresignedURL(url, TEST_TOKEN, file);
+            let data = await getPresignedURL(url, token, file);
             // console.log("JSON response is", data);
             let assetId = data.meta.uid;
 
@@ -172,8 +232,8 @@
               console.log(`Uploaded to S3 (${result}): ${data.meta.name} as ${data.upload.fields.key}`);
             }
 
-            result = await confirmUpload(url+'/'+assetId, TEST_TOKEN, file);
-            if (result === 204) {
+            result = await confirmUpload(url+'/'+assetId, token, file);
+            if (result.ok) {
               console.log(`Upload confirmed (${result}): ${data.meta.name} as asset ${assetId}`);
             }
 
