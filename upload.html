@@ -8,7 +8,13 @@
       margin: 0;
     }
     body {
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol';
+      background-color: lightgray;
+      margin: 5rem auto;
+      max-width: 500px;
+      width: 90vw;
     }
     input {
       margin: 12px;
@@ -40,6 +46,7 @@
 </head>
 <body>
   <div id="login-div" class="centered">
+    <img id="logo" src="osssbox-logo.png" style="width:320px; display: block; margin-left: auto; margin-right: auto;" />
     <p>
       <label>Username : </label>   
       <input id="username" type="text" placeholder="Enter Username" name="username" required>  
