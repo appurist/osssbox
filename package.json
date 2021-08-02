@@ -1,6 +1,6 @@
 {
   "name": "osssbox",
-  "version": "0.1.0",
+  "version": "0.2.10728",
   "description": "Online Storage Server for S3",
   "scripts": {
     "dev": "netlify dev",

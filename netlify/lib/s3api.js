@@ -236,9 +236,10 @@ async function getBucketLifecycleRules(_bucket) {
   return Rules;
 }
 
-// keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
 const URL_EXPIRATION_SECONDS = 600  //Seconds before the presigned post expires. 3600 by default.
 const URL_ACL = "private";
+
+// keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
 async function getUploadURL(prefix, fn, _bucket) {
   let Bucket = _bucket || bucket;
   let Key = prefix + fn;
