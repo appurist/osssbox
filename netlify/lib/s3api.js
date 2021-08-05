@@ -255,10 +255,26 @@ async function getUploadURL(prefix, fn, _bucket) {
   return { url, fields };
 }
 
+// keyPrefix should be the full key, like `users/${userId}/assets/${assetId}.blob`
+async function getDownloadURL(prefix, fn, _bucket) {
+  let Bucket = _bucket || bucket;
+  let Key = prefix + fn;
+  const Conditions = [{ acl: URL_ACL }, { bucket: Bucket }, ["starts-with", "$key", prefix]];
+  const Fields = { acl: URL_ACL };
+  const { url, fields } = await createPresignedPost(s3Client, {
+    Bucket,
+    Key,
+    Conditions,
+    Fields,
+    Expires: URL_EXPIRATION_SECONDS,
+  });
+  return { url, fields };
+}
+
 module.exports = { 
   setAccessKey, setSecretAccessKey, setProfile,
   setRegion, setEndpoint, setBucket,
-  connect, normalizePrefix, getUploadURL,
+  connect, normalizePrefix, getUploadURL, getDownloadURL,
   docList, docGet, docPut, objMove, objDelete,
   setBucketLifecycleRules, getBucketLifecycleRules
 }

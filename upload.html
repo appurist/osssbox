@@ -99,7 +99,7 @@
           let data = await response.json();
           token = data.token;
           localStorage.setItem('user', JSON.stringify(data));
-          console.error(`Logged in as ${data.login} ("${data.display}").`);
+          console.log(`Logged in as ${data.login} ("${data.display}").`);
           updateDivs();
         } else {
           console.error(`POST to ${url} returned ${response.status} "${response.statusText}`);

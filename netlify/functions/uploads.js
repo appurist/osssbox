@@ -4,10 +4,55 @@ const s3api = require('../lib/s3api');
 const auth = require('../lib/auth');
 const chopURL = require('../lib/chopURL');
 
+async function GetDownloads(user) {
+  s3api.connect();
+  try {
+    let list = await s3api.docList(`users/${user.uid}/assets`);
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(list, null, 2)
+    };    
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: 'Bad JSON body: '+err.message
+    };
+  }
+}
+
+async function CreateSignedDownload(user, assetId) {
+  s3api.connect();
+
+  try {
+    // Request a signed download URL from S3
+    let Key = `users/${user.uid}/assets/${assetId}.json`;
+    let meta = await s3api.docGet(Key);
+
+    let fn = `${assetId}.blob`; // does not include fn extension
+    let prefix = `downloads/${user.uid}/`; // does not include fn extension
+    let download = await s3api.getDownloadURL(prefix, fn);
+    if (!download) {
+      return { statusCode: 500, body: `Error: Could not obtain download URL for user '${user.login}'.`};
+    }
+    // return the URL info + meta info
+    result = Object.assign({ }, { download }, { meta })
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json'},
+      body: JSON.stringify(result, null, 2)
+    };
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: 'Bad JSON body: '+err.message
+    };
+  }
+}
+
 // The REST API sequence is to create a binary (blob) asset via POST to /uploads to get a signed upload URL, then upload there,
 // and finally call DELETE /uploads/:assetId to signal move/cleanup of the temp upload and creation of the JSON metadata object.
 // If DELETE is not called, assets will be eventually be auto-deleted from temp upload storage.
-
 async function CreateSignedUpload(user, doc) {
   let assetId = uuid();
 
@@ -87,18 +132,22 @@ exports.handler = async (event, /* context */ ) => {
     }
 
     // It's a new asset, give it a new asset ID and presigned URL for upload
-    let doc;
-    try {
-      doc = JSON.parse(event.body);
-    } catch (err) {
-      return {
-        statusCode: 400,
-        body: 'Bad JSON body: '+err.message
-      };
+    let doc = { };
+    if (event.body) {
+      try {
+        doc = JSON.parse(event.body);
+      } catch (err) {
+        return {
+          statusCode: 400,
+          body: 'Bad JSON body: '+err.message
+        };
+      }
     }
 
     // Here we implement a simple CRUD interface, plus GET for list.
     switch (event.httpMethod) {
+    case 'GET':
+      return assetId ? await CreateSignedDownload(user, assetId) : await GetDownloads(user);
     case 'POST':
       return assetId ? await CompleteUpload(user, assetId, doc) : await CreateSignedUpload(user, doc);
     default:
