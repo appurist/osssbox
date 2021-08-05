@@ -1,6 +1,6 @@
 {
   "name": "osssbox",
-  "version": "0.2.10728",
+  "version": "0.2.10804",
   "description": "Online Storage Server for S3",
   "scripts": {
     "dev": "netlify dev",
@@ -25,11 +25,11 @@
   },
   "homepage": "https://github.com/appurist/osssbox#readme",
   "devDependencies": {
-    "netlify-cli": "latest"
+    "netlify-cli": "^6.0.3"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "latest",
-    "@aws-sdk/credential-provider-ini": "latest",
+    "@aws-sdk/client-s3": "^3.24.0",
+    "@aws-sdk/credential-provider-ini": "^3.24.0",
     "@aws-sdk/s3-presigned-post": "^3.18.0",
     "bcrypt": "^5.0.1",
     "jsonwebtoken": "latest",
