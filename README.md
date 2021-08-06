@@ -10,5 +10,6 @@ The goal of this project is to deliver **a *generic* server back-end** that can 
 This package of serverless functions provides an authenticated, multi-user REST API interface to high-level generic **project** and **asset** definitions, with back-end storage on:
 - [Amazon's Simple Storage Service](https://aws.amazon.com/s3/)  (S3), or
 - [Vultr's "Object Storage"](https://www.vultr.com/docs/vultr-object-storage) (which is S3-compatible object storage).
+- [Upcloud's "Object Storage"](https://upcloud.com/products/object-storage/) (which is also S3-compatible object storage).
 
-**NOTE: This is a work in progress.**
+**NOTE: This is an early work in progress, or more accurately a personal experiment that I will probably make use of eventually.**
