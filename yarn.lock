@@ -6646,7 +6646,7 @@ nested-error-stacks@^2.0.0, nested-error-stacks@^2.1.0:
   resolved "https://registry.yarnpkg.com/nested-error-stacks/-/nested-error-stacks-2.1.0.tgz#0fbdcf3e13fe4994781280524f8b96b0cdff9c61"
   integrity sha512-AO81vsIO1k1sM4Zrd6Hu7regmJN1NSiAja10gc4bX3F0wd+9rQmcuHQaHVQCYIEC8iFXnE+mavh23GOt7wBgug==
 
-netlify-cli@^6.0.3:
+netlify-cli@^6.10.1:
   version "6.10.1"
   resolved "https://registry.yarnpkg.com/netlify-cli/-/netlify-cli-6.10.1.tgz#0f0e74f94cec8ea79058700f5171c4c95a41045e"
   integrity sha512-kqR6U/WyS/JQ1u2LpdbMzXGuhy6xfsOTquaaItjo+Lni0/wKZvdX0GGM+s5sXJBeHAg5xh+2N45KBCg9nj+tRQ==
